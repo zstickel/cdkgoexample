@@ -1,9 +1,8 @@
-package main
+cpackage main
 
 import (
 	"encoding/json"
 	"testing"
-
 	"github.com/aws/aws-cdk-go/awscdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"

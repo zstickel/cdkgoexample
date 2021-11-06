@@ -2,7 +2,8 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk"
-	"github.com/aws/aws-cdk-go/awscdk/awssns"
+	"github.com/aws/aws-cdk-go/awscdk/awsappsync"
+	"github.com/aws/aws-cdk-go/awscdk/awsdynamodb"
 	"github.com/aws/constructs-go/constructs/v3"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -21,8 +22,36 @@ func NewGocdkStack(scope constructs.Construct, id string, props *GocdkStackProps
 	// The code that defines your stack goes here
 
 	// as an example, here's how you would define an AWS SNS topic:
-	awssns.NewTopic(stack, jsii.String("MyTopic"), &awssns.TopicProps{
-		DisplayName: jsii.String("MyCoolTopic"),
+
+	api := awsappsync.NewGraphqlApi(stack, jsii.String("MyApi"), &awsappsync.GraphqlApiProps{
+		AuthorizationConfig: &awsappsync.AuthorizationConfig{
+			DefaultAuthorization: &awsappsync.AuthorizationMode{
+				AuthorizationType: awsappsync.AuthorizationType_IAM,
+			},
+		},
+		Name:   jsii.String("ZaneApi"),
+		Schema: awsappsync.Schema_FromAsset(jsii.String("schema.graphql")),
+	})
+
+	table := awsdynamodb.NewTable(stack, jsii.String("Demos"), &awsdynamodb.TableProps{
+		PartitionKey: &awsdynamodb.Attribute{Name: jsii.String("id"), Type: awsdynamodb.AttributeType_STRING},
+		SortKey:      &awsdynamodb.Attribute{Name: jsii.String("username"), Type: awsdynamodb.AttributeType_STRING},
+		Encryption:   awsdynamodb.TableEncryption_DEFAULT,
+	})
+	demoDS := api.AddDynamoDbDataSource(jsii.String("demoDataSource"), table, &awsappsync.DataSourceOptions{})
+
+	demoDS.CreateResolver(&awsappsync.BaseResolverProps{
+		TypeName:                jsii.String("Query"),
+		FieldName:               jsii.String("getDemos"),
+		RequestMappingTemplate:  awsappsync.MappingTemplate_DynamoDbScanTable(),
+		ResponseMappingTemplate: awsappsync.MappingTemplate_DynamoDbResultList(),
+	})
+
+	demoDS.CreateResolver(&awsappsync.BaseResolverProps{
+		TypeName:                jsii.String("Mutation"),
+		FieldName:               jsii.String("addDemo"),
+		RequestMappingTemplate:  awsappsync.MappingTemplate_DynamoDbPutItem(awsappsync.PrimaryKey_Partition(jsii.String("id")).Auto(), awsappsync.Values_Projecting(jsii.String("input"))),
+		ResponseMappingTemplate: awsappsync.MappingTemplate_DynamoDbResultItem(),
 	})
 
 	return stack

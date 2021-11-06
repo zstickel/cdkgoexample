@@ -1,0 +1,18 @@
+type Demo {
+    id: ID!
+    username: String!
+    whiskeys: [String!]
+}
+
+type Query {
+    getDemos: [ Demo ]
+}
+
+input DemoInput {
+    username: String!
+    whiskeys: [String!]
+}
+
+type Mutation {
+    addDemo(input: DemoInput!): Demo
+}
