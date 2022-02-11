@@ -1,4 +1,4 @@
-# This is an example golang AWS CDK Application that implements Appsync GraphQL infrastructure
+# This is an example golang AWS CDK Application that implements AWS Appsync (GraphQL) API  backed by DynamoDB
 
 
 ## Useful commands
